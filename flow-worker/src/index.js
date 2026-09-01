@@ -1,35 +1,49 @@
-const ALLOWED_ORIGIN = "https://noah.startpage.the05company.com"
+const ALLOWED_ORIGINS = [
+  "https://noah.startpage.the05company.com",
+  "http://noah.startpage.the05company.com",
+]
 
 export default {
   async fetch(request, env) {
+    const origin = request.headers.get("Origin")
+
+    // CORS preflight
     if (request.method === "OPTIONS") {
+      if (!ALLOWED_ORIGINS.includes(origin)) {
+        return new Response(null, {
+          status: 403,
+        })
+      }
+
       return new Response(null, {
         status: 204,
         headers: {
-          "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+          "Access-Control-Allow-Origin": origin,
           "Access-Control-Allow-Methods": "POST, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type",
         },
       })
     }
 
+    // Only allow POST requests
     if (request.method !== "POST") {
       return json(
         {
           error: "Method not allowed.",
         },
-        405
+        405,
+        origin
       )
     }
 
-    const origin = request.headers.get("Origin")
-
-    if (origin !== ALLOWED_ORIGIN) {
+    // Only allow requests from the start page
+    if (!ALLOWED_ORIGINS.includes(origin)) {
       return json(
         {
           error: "Origin not allowed.",
         },
-        403
+        403,
+        origin
       )
     }
 
@@ -42,7 +56,8 @@ export default {
           {
             error: "A search query is required.",
           },
-          400
+          400,
+          origin
         )
       }
 
@@ -119,7 +134,8 @@ Prioritise useful information over conversational filler.
           {
             error: "Flow could not generate a response.",
           },
-          response.status
+          response.status,
+          origin
         )
       }
 
@@ -133,42 +149,59 @@ Prioritise useful information over conversational filler.
           {
             error: "Flow returned an empty response.",
           },
-          500
+          500,
+          origin
         )
       }
 
-      return json({
-        answer,
-        model: "05 AI",
-      })
+      return json(
+        {
+          answer,
+          model: "05 AI",
+        },
+        200,
+        origin
+      )
     } catch (error) {
-      console.error("Flow Worker error:", error)
+      console.error(
+        "Flow Worker error:",
+        error
+      )
 
       return json(
         {
-          error: "Something went wrong while generating the answer.",
+          error:
+            "Something went wrong while generating the answer.",
         },
-        500
+        500,
+        origin
       )
     }
   },
 }
 
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
+function json(data, status = 200, origin = null) {
+  const headers = {
+    "Content-Type": "application/json",
 
-    headers: {
-      "Content-Type": "application/json",
+    "Access-Control-Allow-Methods":
+      "POST, OPTIONS",
 
-      "Access-Control-Allow-Origin":
-        ALLOWED_ORIGIN,
+    "Access-Control-Allow-Headers":
+      "Content-Type",
+  }
 
-      "Access-Control-Allow-Methods":
-        "POST, OPTIONS",
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    headers["Access-Control-Allow-Origin"] =
+      origin
+  }
 
-      "Access-Control-Allow-Headers":
-        "Content-Type",
-    },
-  })
+  return new Response(
+    JSON.stringify(data),
+    {
+      status,
+      headers,
+    }
+  )
 }
+

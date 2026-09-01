@@ -1,4 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import remarkMath from "remark-math"
+import rehypeKatex from "rehype-katex"
+import "katex/dist/katex.min.css"
 import "./App.css"
 
 const WEATHER_URL =
@@ -19,14 +24,14 @@ const COMMANDS = [
     color: "youtube",
     description: "Search YouTube",
   },
-    {
+  {
     command: "/jw",
     name: "JW.org",
     type: "redirect",
     color: "jw",
     description: "Search JW.org",
   },
-      {
+  {
     command: "/wol",
     name: "Watchtower Online Library",
     type: "redirect",
@@ -189,27 +194,16 @@ function calculateExpression(expression) {
 
 function App() {
   const [time, setTime] = useState(new Date())
-
   const [search, setSearch] = useState("")
-
   const [weather, setWeather] = useState(null)
-
   const [commandMenuOpen, setCommandMenuOpen] = useState(false)
-
-  const [highlightedCommand, setHighlightedCommand] =
-    useState(0)
-
+  const [highlightedCommand, setHighlightedCommand] = useState(0)
   const [calculation, setCalculation] = useState(null)
-
   const [commandWeather, setCommandWeather] = useState(null)
-
   const [commandWeatherLoading, setCommandWeatherLoading] =
     useState(false)
-
   const [flowAnswer, setFlowAnswer] = useState("")
-
   const [flowLoading, setFlowLoading] = useState(false)
-
   const [flowError, setFlowError] = useState("")
 
   const inputRef = useRef(null)
@@ -226,7 +220,6 @@ function App() {
     async function loadWeather() {
       try {
         const response = await fetch(WEATHER_URL)
-
         const data = await response.json()
 
         setWeather(data)
@@ -269,12 +262,6 @@ function App() {
       .slice(1)
       .split(" ")[0]
 
-    /*
-      The command menu intentionally does NOT appear
-      when the user has only typed "/".
-
-      It appears after the first command character.
-    */
     if (
       search.startsWith("/") &&
       commandText.length >= 1 &&
@@ -300,7 +287,6 @@ function App() {
     setSearch(`${command.command} `)
 
     setCommandMenuOpen(false)
-
     setHighlightedCommand(0)
 
     requestAnimationFrame(() => {
@@ -350,7 +336,6 @@ function App() {
     const location = query.trim() || "Flamborough"
 
     setCommandWeatherLoading(true)
-
     setCommandWeather(null)
 
     try {
@@ -364,7 +349,6 @@ function App() {
 
       if (!geoData.results?.length) {
         setCommandWeatherLoading(false)
-
         return
       }
 
@@ -394,13 +378,9 @@ function App() {
 
   async function runFlow(query) {
     setFlowLoading(true)
-
     setFlowAnswer("")
-
     setFlowError("")
-
     setCalculation(null)
-
     setCommandWeather(null)
 
     try {
@@ -467,7 +447,7 @@ function App() {
       return
     }
 
-     if (command.color === "wol") {
+    if (command.color === "wol") {
       window.location.href =
         `https://wol.jw.org/en/wol/s/r1/lp-e?q=${encodeURIComponent(
           query
@@ -523,7 +503,6 @@ function App() {
 
     if (command.color === "flow") {
       runFlow(query)
-
       return
     }
 
@@ -542,7 +521,6 @@ function App() {
 
       setFlowAnswer("")
       setFlowError("")
-
       setCommandWeather(null)
 
       return
@@ -552,7 +530,6 @@ function App() {
       runWeather(query)
 
       setCalculation(null)
-
       setFlowAnswer("")
       setFlowError("")
     }
@@ -579,7 +556,6 @@ function App() {
       }
 
       runCommand(command, commandQuery)
-
       return
     }
 
@@ -609,7 +585,6 @@ function App() {
   return (
     <div className="app">
       <main className="home">
-
         <header className="top">
           <div className="date">
             {currentDate}
@@ -621,17 +596,14 @@ function App() {
         </header>
 
         <section className="main">
-
           <h1>
             {greeting} Noah.
           </h1>
 
           <div className="search-wrapper">
-
             {commandMenuOpen &&
               commandMatches.length > 0 && (
                 <div className="command-menu">
-
                   {commandMatches.map(
                     (command, index) => (
                       <button
@@ -654,7 +626,6 @@ function App() {
                           )
                         }
                       >
-
                         <span
                           className={`command-dot ${command.color}`}
                         />
@@ -673,11 +644,9 @@ function App() {
                             Tab
                           </span>
                         )}
-
                       </button>
                     )
                   )}
-
                 </div>
               )}
 
@@ -687,7 +656,6 @@ function App() {
               }`}
               onSubmit={handleSearch}
             >
-
               <svg
                 className="search-icon"
                 width="20"
@@ -739,20 +707,15 @@ function App() {
                   {searchMode.name}
                 </span>
               )}
-
             </form>
-
           </div>
 
           <div className="result-area">
-
             {(flowLoading ||
               flowAnswer ||
               flowError) && (
               <div className="flow-result">
-
                 <div className="flow-header">
-
                   <div className="flow-status">
                     <span className="flow-orb" />
 
@@ -766,7 +729,6 @@ function App() {
                       Thinking
                     </span>
                   )}
-
                 </div>
 
                 {flowLoading && (
@@ -779,7 +741,17 @@ function App() {
 
                 {flowAnswer && (
                   <div className="flow-answer">
-                    {flowAnswer}
+                    <ReactMarkdown
+                      remarkPlugins={[
+                        remarkGfm,
+                        remarkMath,
+                      ]}
+                      rehypePlugins={[
+                        rehypeKatex,
+                      ]}
+                    >
+                      {flowAnswer}
+                    </ReactMarkdown>
                   </div>
                 )}
 
@@ -788,13 +760,11 @@ function App() {
                     {flowError}
                   </div>
                 )}
-
               </div>
             )}
 
             {calculation !== null && (
               <div className="result">
-
                 <span className="result-label">
                   {calculation.expression}
                 </span>
@@ -802,44 +772,36 @@ function App() {
                 <span className="calculation-result">
                   {calculation.result}
                 </span>
-
               </div>
             )}
 
             {commandWeatherLoading && (
               <div className="result">
-
                 <span className="result-label">
                   Loading weather...
                 </span>
-
               </div>
             )}
 
             {commandWeather &&
               !commandWeatherLoading && (
                 <div className="result weather-command-result">
-
                   <div>
-
                     <span className="result-label">
                       {commandWeather.name}
                     </span>
 
                     <div className="weather-command-main">
-
                       <span className="weather-icon">
                         {getWeatherIcon(
-                          commandWeather
-                            .current
+                          commandWeather.current
                             .weather_code
                         )}
                       </span>
 
                       <span className="temperature">
                         {Math.round(
-                          commandWeather
-                            .current
+                          commandWeather.current
                             .temperature_2m
                         )}
                         °
@@ -847,18 +809,14 @@ function App() {
 
                       <span className="condition">
                         {getWeatherDescription(
-                          commandWeather
-                            .current
+                          commandWeather.current
                             .weather_code
                         )}
                       </span>
-
                     </div>
-
                   </div>
 
                   <div className="weather-command-details">
-
                     H{" "}
                     {Math.round(
                       commandWeather.daily
@@ -876,23 +834,18 @@ function App() {
                         .temperature_2m_min[0]
                     )}
                     °
-
                   </div>
-
                 </div>
               )}
-
           </div>
 
           {weather && (
             <div className="weather">
-
               <div className="weather-location">
                 Flamborough
               </div>
 
               <div className="weather-main">
-
                 <span className="weather-icon">
                   {getWeatherIcon(
                     weather.current
@@ -914,11 +867,9 @@ function App() {
                       .weather_code
                   )}
                 </span>
-
               </div>
 
               <div className="weather-details">
-
                 <span>
                   H{" "}
                   {Math.round(
@@ -936,14 +887,10 @@ function App() {
                   )}
                   °
                 </span>
-
               </div>
-
             </div>
           )}
-
         </section>
-
       </main>
     </div>
   )
